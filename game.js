@@ -152,7 +152,6 @@ class SoldierSpell {
     constructor() {
         this.name = "soldier";
         this.cost = 30;
-        this.initialPosition = {x: 0, y: 0}
     }
     cast = function (game) {
         console.log("soldier spell is casted")
@@ -337,11 +336,16 @@ class Game {
         ctx.fillText("Mana", 10, manaBarWidth);
         ctx.fillText(mana + "/100", 10, 50);
 
-        spells.forEach(w => {
-            let y= 580 - (500*w.cost/100)
-            ctx.fillText("- "+ w.name, manaBarWidth+10, y)
-            }
-        )
+        function drawSpells() {
+            let cw = this.currentWord;
+            spells.forEach(w => {
+                    let y = 580 - (500 * w.cost / 100)
+                    ctx.fillText("- " + w.name, manaBarWidth + 10, y)
+                }
+            )
+        }
+
+        drawSpells();
     }
 
     drawBuffer() {
