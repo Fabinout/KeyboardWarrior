@@ -27,8 +27,6 @@ class Word {
             ctx.fillStyle = "red"
             ctx.fillText(currentBuffer, this.position.x, this.position.y);
             let x = ctx.measureText(currentBuffer).width
-            console.log(x)
-            console.log(this.position.x)
             ctx.fillStyle = "black"
             ctx.fillText(this.value.substring(currentBuffer.length), x + this.position.x, this.position.y);
 
@@ -153,6 +151,7 @@ class SoldierSpell {
         this.name = "soldier";
         this.cost = 30;
     }
+
     cast = function (game) {
         console.log("soldier spell is casted")
         game.add(new Soldier());
@@ -193,20 +192,20 @@ class Soldier {
 
         let swordStart = {x: center.x + 25, y: center.y + 10}
         let swordSize = {w: 10, h: 20}
-        if(this.swordUp){
+        if (this.swordUp) {
 
-        context.moveTo(swordStart.x, swordStart.y)
-        context.lineTo(swordStart.x + swordSize.h, center.y - swordSize.h)
-        context.moveTo(swordStart.x , swordStart.y-15)
-        context.lineTo(swordStart.x + swordSize.h-6, center.y +5)
-        context.stroke();
+            context.moveTo(swordStart.x, swordStart.y)
+            context.lineTo(swordStart.x + swordSize.h, center.y - swordSize.h)
+            context.moveTo(swordStart.x, swordStart.y - 15)
+            context.lineTo(swordStart.x + swordSize.h - 6, center.y + 5)
+            context.stroke();
         }
 
 
     }
     update = function (game) {
         if (this.action === ACTIONS.moving) {
-            this.position = Math.min(this.position+ this.speed, 1350)
+            this.position = Math.min(this.position + this.speed, 1350)
         } else if (this.action === ACTIONS.attacking) {
 
         }
@@ -227,7 +226,7 @@ class Game {
         this.availableSpells = [new SoldierSpell()]
         this.allied = [new Soldier()];
         this.mana = 0;
-        this.world = {x0:100, xs:this.size.w-100}
+        this.world = {x0: 100, xs: this.size.w - 100}
         this.ticks = 0;
         let self = this;
         let tick = function () {
@@ -275,12 +274,12 @@ class Game {
             let word = aw.find(w => w === this.currentWord);
             this.mana = Math.min(this.currentWord.length + this.mana, 100);
 
-            let position = this.availableWords.find(w=> w.value === this.currentWord).position;
+            let position = this.availableWords.find(w => w.value === this.currentWord).position;
             this.wordsToRecreate.push({x: position.x, y: position.y, time: this.ticks})
             this.availableWords = this.availableWords.filter(w => w.value !== this.currentWord)
             this.clearWord();
-        }else{
-            if (as.indexOf(this.currentWord)>-1){
+        } else {
+            if (as.indexOf(this.currentWord) > -1) {
                 let spell = this.availableSpells.find(w => w.name === this.currentWord);
                 spell.cast(this);
                 this.mana -= spell.cost;
@@ -336,11 +335,24 @@ class Game {
         ctx.fillText("Mana", 10, manaBarWidth);
         ctx.fillText(mana + "/100", 10, 50);
 
+        let self = this
+
         function drawSpells() {
-            let cw = this.currentWord;
+            let cw = self.currentWord;
             spells.forEach(w => {
                     let y = 580 - (500 * w.cost / 100)
-                    ctx.fillText("- " + w.name, manaBarWidth + 10, y)
+                    let x = manaBarWidth + 10;
+                    if (cw.length > 0 && w.name.startsWith(cw)) {
+                        ctx.fillStyle = "red"
+                        let firstText = "- " + cw;
+                        ctx.fillText(firstText, x, y)
+                        let wordWidth = ctx.measureText(firstText).width
+                        ctx.fillStyle = "black"
+                        ctx.fillText(w.name.substring(cw.length), wordWidth + x, y);
+
+                    } else {
+                        ctx.fillText("- " + w.name, x, y)
+                    }
                 }
             )
         }
