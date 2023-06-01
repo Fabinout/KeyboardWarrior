@@ -173,6 +173,7 @@ class Soldier {
         this.life = 50;
         this.action = ACTIONS.moving;
         this.swordUp = true;
+        this.tick = 0
     }
 
     draw = function (context) {
@@ -190,20 +191,33 @@ class Soldier {
         context.lineWidth = 4;
         context.fillStyle = "black";
 
-        let swordStart = {x: center.x + 25, y: center.y + 10}
-        let swordSize = {w: 10, h: 20}
+        let swordStart = {x: center.x + 20, y: center.y + 10}
+        let swordSize = {w: 10, h: 40}
+        context.translate(swordStart.x, swordStart.y);
+        let swordAnimationLength = 32;
         if (this.swordUp) {
-
-            context.moveTo(swordStart.x, swordStart.y)
-            context.lineTo(swordStart.x + swordSize.h, center.y - swordSize.h)
-            context.moveTo(swordStart.x, swordStart.y - 15)
-            context.lineTo(swordStart.x + swordSize.h - 6, center.y + 5)
-            context.stroke();
+            context.rotate(45 * Math.PI / 180)
+            context.fillRect(0, 0, 5, -40)
+            context.fillRect(-7, -15, 20, 5)
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            if (this.tick % swordAnimationLength === 0) {
+                this.swordUp = false;
+            }
+        } else {
+            context.rotate(90 * Math.PI / 180)
+            context.fillRect(0, 0, 5, -40)
+            context.fillRect(-7, -15, 20, 5)
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            if (this.tick % swordAnimationLength === 0) {
+                this.swordUp = true;
+                this.tick = 0;
+            }
         }
 
 
     }
     update = function (game) {
+        this.tick++;
         if (this.action === ACTIONS.moving) {
             this.position = Math.min(this.position + this.speed, 1350)
         } else if (this.action === ACTIONS.attacking) {
