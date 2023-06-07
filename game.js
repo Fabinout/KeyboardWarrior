@@ -174,33 +174,35 @@ class Soldier {
         this.action = ACTIONS.moving;
         this.swordUp = true;
         this.tick = 0
+        this.swordAnimationLength = 32;
+        this.attackDamage = 3;
     }
 
     draw = function (context) {
-
-        context.fillRect(this.position + 100, 550, 20, 40)
-
-        let center = {x: this.position + 100, y: 550}
+        context.save()
+        context.translate(this.position + 140, 542);
+        context.fillRect(0,0, 20, 40)
 
         context.beginPath();
         context.fillStyle = "bisque"; // #ffe4c4
-        context.arc(center.x + 10, center.y - 5, 8, 0, Math.PI * 2, true); // draw circle for head
+        context.arc( 10,  - 5, 8, 0, Math.PI * 2, true); // draw circle for head
         // (x,y) center, radius, start angle, end angle, anticlockwise
         context.fill();
         context.beginPath()
         context.lineWidth = 4;
         context.fillStyle = "black";
 
-        let swordStart = {x: center.x + 20, y: center.y + 10}
+        let swordStart = {x:  20, y:  10}
+        context.translate(5,0)
         let swordSize = {w: 10, h: 40}
         context.translate(swordStart.x, swordStart.y);
-        let swordAnimationLength = 32;
+
         if (this.swordUp) {
             context.rotate(45 * Math.PI / 180)
             context.fillRect(0, 0, 5, -40)
             context.fillRect(-7, -15, 20, 5)
             context.setTransform(1, 0, 0, 1, 0, 0);
-            if (this.tick % swordAnimationLength === 0) {
+            if (this.tick % this.swordAnimationLength === 0) {
                 this.swordUp = false;
             }
         } else {
@@ -208,19 +210,23 @@ class Soldier {
             context.fillRect(0, 0, 5, -40)
             context.fillRect(-7, -15, 20, 5)
             context.setTransform(1, 0, 0, 1, 0, 0);
-            if (this.tick % swordAnimationLength === 0) {
+            if (this.tick % this.swordAnimationLength === 0) {
                 this.swordUp = true;
                 this.tick = 0;
             }
         }
 
+        context.restore()
 
     }
     update = function (game) {
         this.tick++;
         if (this.action === ACTIONS.moving) {
-            this.position = Math.min(this.position + this.speed, 1350)
+            this.position = Math.min(this.position + this.speed, 1330)
         } else if (this.action === ACTIONS.attacking) {
+            if(this.tick % this.swordAnimationLength ===0){
+                this.target.health.current -= this.attackDamage;
+            }
 
         }
     }
@@ -240,10 +246,20 @@ class Game {
         this.availableSpells = [new SoldierSpell()]
         this.allied = [new Soldier()];
         this.mana = 0;
+        this.health = {max: 100, current: undefined}
+        this.health.current = this.health.max
         this.world = {x0: 100, xs: this.size.w - 100}
+
+        function generateSimpleOpponent() {
+            return {health: {current: 100, max: 100}};
+        }
+
+        this.opponent = generateSimpleOpponent()
         this.ticks = 0;
         let self = this;
         let tick = function () {
+            console.log(self.allied.length)
+
             self.ticks++;
             let ctx = document.getElementById("screen").getContext("2d");
 
@@ -320,41 +336,45 @@ class Game {
             w.draw(ctx, this.currentWord);
         }
         this.drawManaBar(ctx, canvasSize, this.mana, this.availableSpells);
+        this.drawMyHealthBar(ctx, canvasSize, this.health);
+        this.drawOpponentHealthBar(ctx, canvasSize, this.opponent.health);
         this.drawBuffer();
         //ctx.fillRect(200,200,200,200)
         this.allied.forEach(b => b.draw(ctx));
     }
 
     drawManaBar(ctx, canvasSize, mana, spells) {
-
-        ctx.beginPath();
+        ctx.save()
         ctx.lineWidth = "4";
-        ctx.strokeStyle = "black";
+        //ctx.strokeStyle = "black";
         let manaBarHeight = 500;
-        let manaBarWidth = 30;
+        let manaBarWidth = 50;
 
-        ctx.rect(10, 580, manaBarWidth, -manaBarHeight);
-        ctx.stroke();
+        ctx.translate(70, 580)
+
+        ctx.rect(0, 0, manaBarWidth, -manaBarHeight);
+        ctx.stroke()
 
         // console.log("mana :" + (mana) / 100)
-        ctx.save()
-        ctx.beginPath();
         ctx.lineWidth = "4";
         ctx.fillStyle = "blue";
-        ctx.fillRect(10, 580, manaBarWidth, -manaBarHeight * (mana) / 100);
-        ctx.stroke();
-        ctx.restore()
+        ctx.fillRect(0, 0, manaBarWidth, -manaBarHeight * (mana) / 100);
 
+        ctx.font = "30px Courier New";
+        ctx.fillText("💧", 15, -manaBarHeight - 40);
         ctx.font = "15px Courier New";
-        ctx.fillText("Mana", 10, manaBarWidth);
-        ctx.fillText(mana + "/100", 10, 50);
+        ctx.fillText(mana + "/100", 5, -manaBarHeight - 20);
+        ctx.stroke()
+
 
         let self = this
 
         function drawSpells() {
             let cw = self.currentWord;
+            ctx.fillStyle = "black"
+            ctx.font = "15px Courier New";
             spells.forEach(w => {
-                    let y = 580 - (500 * w.cost / 100)
+                    let y = 0 - (500 * w.cost / 100)
                     let x = manaBarWidth + 10;
                     if (cw.length > 0 && w.name.startsWith(cw)) {
                         ctx.fillStyle = "red"
@@ -367,11 +387,65 @@ class Game {
                     } else {
                         ctx.fillText("- " + w.name, x, y)
                     }
+                    ctx.stroke()
                 }
             )
         }
 
         drawSpells();
+        ctx.restore()
+    }
+
+    drawMyHealthBar(ctx, canvasSize, health) {
+        ctx.save()
+        let maxHealth = health.max;
+        ctx.lineWidth = "4";
+        //ctx.strokeStyle = "black";
+        let healthBarHeight = 500;
+        let healthBarWidth = 50;
+
+        ctx.translate(10, 580)
+
+        ctx.rect(0, 0, healthBarWidth, -healthBarHeight);
+        ctx.stroke()
+
+        // console.log("mana :" + (mana) / 100)
+        ctx.lineWidth = "4";
+        ctx.fillStyle = "green";
+        ctx.fillRect(0, 0, healthBarWidth, -healthBarHeight * (health.current) / maxHealth);
+
+        ctx.font = "35px Courier New";
+        ctx.fillText("💕", 5, -healthBarHeight - 40);
+        ctx.font = "15px Courier New";
+        ctx.fillText(health.current + "/" + maxHealth, 0 - 5, -healthBarHeight - 20);
+        ctx.stroke()
+        ctx.restore()
+
+    }
+    drawOpponentHealthBar(ctx, canvasSize, health) {
+        ctx.save()
+        let maxHealth = health.max;
+        ctx.lineWidth = "4";
+        //ctx.strokeStyle = "black";
+        let healthBarHeight = 500;
+        let healthBarWidth = 50;
+
+        ctx.translate(canvasSize.w-80, 580)
+
+        ctx.rect(0, 0, healthBarWidth, -healthBarHeight);
+        ctx.stroke()
+
+        // console.log("mana :" + (mana) / 100)
+        ctx.lineWidth = "4";
+        ctx.fillStyle = "green";
+        ctx.fillRect(0, 0, healthBarWidth, -healthBarHeight * (health.current) / maxHealth);
+
+        ctx.font = "35px Courier New";
+        ctx.fillText("💕", 5, -healthBarHeight - 40);
+        ctx.font = "15px Courier New";
+        ctx.fillText(health.current + "/" + maxHealth, 0 - 5, -healthBarHeight - 20);
+        ctx.stroke()
+        ctx.restore()
     }
 
     drawBuffer() {
