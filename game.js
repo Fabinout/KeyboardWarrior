@@ -1,3 +1,4 @@
+let side
 class KeyboardListener {
 
     constructor(game) {
@@ -7,7 +8,6 @@ class KeyboardListener {
                 game.currentWord += ev.key;
             } else {
                 if (key === "Backspace") {
-                    console.log("buffer is deleted");
                     game.clearWord();
                 }
             }
@@ -29,7 +29,6 @@ class Word {
             let x = ctx.measureText(currentBuffer).width
             ctx.fillStyle = "black"
             ctx.fillText(this.value.substring(currentBuffer.length), x + this.position.x, this.position.y);
-
         } else {
             ctx.font = "20px Arial";
             ctx.fillStyle = "black"
@@ -164,13 +163,27 @@ const ACTIONS = {
     attacking: Symbol("attacking")
 }
 
-class Soldier {
+const SIDE = {
+    ally: Symbol("ally"),
+    enemy: Symbol("enemy")
+}
 
-    constructor() {
+class Unity {
+
+    constructor(maxHealth, side) {
+        this.health = {current:maxHealth, max: maxHealth}
+        this.side = side;
+    }
+}
+
+class Soldier extends Unity {
+
+    constructor(side) {
+        super(50, side);
         this.position = 0;
         this.size = 1;
         this.speed = 2;
-        this.life = 50;
+        this.health = {current:50, max:50}
         this.action = ACTIONS.moving;
         this.swordUp = true;
         this.tick = 0
@@ -181,19 +194,19 @@ class Soldier {
     draw = function (context) {
         context.save()
         context.translate(this.position + 140, 542);
-        context.fillRect(0,0, 20, 40)
+        context.fillRect(0, 0, 20, 40)
 
         context.beginPath();
         context.fillStyle = "bisque"; // #ffe4c4
-        context.arc( 10,  - 5, 8, 0, Math.PI * 2, true); // draw circle for head
+        context.arc(10, -5, 8, 0, Math.PI * 2, true); // draw circle for head
         // (x,y) center, radius, start angle, end angle, anticlockwise
         context.fill();
         context.beginPath()
         context.lineWidth = 4;
         context.fillStyle = "black";
 
-        let swordStart = {x:  20, y:  10}
-        context.translate(5,0)
+        let swordStart = {x: 20, y: 10}
+        context.translate(5, 0)
         let swordSize = {w: 10, h: 40}
         context.translate(swordStart.x, swordStart.y);
 
@@ -220,11 +233,20 @@ class Soldier {
 
     }
     update = function (game) {
+        console.log(this.action)
         this.tick++;
+
+
         if (this.action === ACTIONS.moving) {
-            this.position = Math.min(this.position + this.speed, 1330)
+            let foundEnemy = game.findEnemy(this);
+            if(foundEnemy!== null){
+                this.target = foundEnemy;
+                this.action = ACTIONS.attacking;
+            }else{
+                this.position = Math.min(this.position + this.speed, 1330)
+            }
         } else if (this.action === ACTIONS.attacking) {
-            if(this.tick % this.swordAnimationLength ===0){
+            if (this.tick % this.swordAnimationLength === 0) {
                 this.target.health.current -= this.attackDamage;
             }
 
@@ -244,21 +266,21 @@ class Game {
         this.size = {w: 1600, h: 600}
         this.availableWords = this.generateInitialWords(this.size);
         this.availableSpells = [new SoldierSpell()]
-        this.allied = [new Soldier()];
+        this.allied = [new Soldier(SIDE.ally)];
         this.mana = 0;
         this.health = {max: 100, current: undefined}
         this.health.current = this.health.max
         this.world = {x0: 100, xs: this.size.w - 100}
-
         function generateSimpleOpponent() {
-            return {health: {current: 100, max: 100}};
+            return {health: {current: 100, max: 100}, mana:0};
         }
 
         this.opponent = generateSimpleOpponent()
+        this.ennemies = [this.opponent];
+
         this.ticks = 0;
         let self = this;
         let tick = function () {
-            console.log(self.allied.length)
 
             self.ticks++;
             let ctx = document.getElementById("screen").getContext("2d");
@@ -282,7 +304,6 @@ class Game {
             let y = (size.h / 2) * rang + 80;
 
             initialWords.push(new Word(random_word(), x, y));
-            //console.log("word " + i + "/ colonne:" + colonne + ";rang:" + rang + "; x:" + x + ";y:" + y)
         }
         return initialWords
     }
@@ -321,7 +342,11 @@ class Game {
         for (const word of this.wordsToRecreate) {
             let cooldown = 100;
             if (self.ticks > word.time + cooldown) {
-                this.availableWords.push(new Word(random_word(), word.x, word.y))
+                let value = random_word();
+                while(contains(value)){
+                    value = random_word();
+                }
+                this.availableWords.push(new Word(value, word.x, word.y))
             } else {
                 savedForLater.push(word);
             }
@@ -329,6 +354,9 @@ class Game {
         this.wordsToRecreate = savedForLater;
     }
 
+    findEnemy(unity){
+        return null;
+    }
     draw = function (ctx, canvasSize) {
         ctx.clearRect(0, 0, canvasSize.w, canvasSize.h)
         //console.log(this.availableWords.length)
@@ -422,6 +450,7 @@ class Game {
         ctx.restore()
 
     }
+
     drawOpponentHealthBar(ctx, canvasSize, health) {
         ctx.save()
         let maxHealth = health.max;
@@ -430,7 +459,7 @@ class Game {
         let healthBarHeight = 500;
         let healthBarWidth = 50;
 
-        ctx.translate(canvasSize.w-80, 580)
+        ctx.translate(canvasSize.w - 80, 580)
 
         ctx.rect(0, 0, healthBarWidth, -healthBarHeight);
         ctx.stroke()
