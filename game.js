@@ -1,4 +1,3 @@
-let side
 class KeyboardListener {
 
     constructor(game) {
@@ -157,6 +156,29 @@ class SoldierSpell {
     }
 }
 
+class StrongerSpell {
+    constructor() {
+        this.name = "stronger";
+        this.cost = 40;
+    }
+
+    cast = function (game) {
+        console.log("stronger spell is casted")
+        game.add(new Soldier());
+    }
+}
+class FasterSpell {
+    constructor() {
+        this.name = "faster";
+        this.cost = 20;
+    }
+
+    cast = function (game) {
+        console.log("faster spell is casted")
+        game.setSpellCastedIsFaster();
+    }
+}
+
 
 const ACTIONS = {
     moving: Symbol("moving"),
@@ -225,15 +247,11 @@ class Soldier extends Unity {
             context.setTransform(1, 0, 0, 1, 0, 0);
             if (this.tick % this.swordAnimationLength === 0) {
                 this.swordUp = true;
-                this.tick = 0;
             }
         }
-
         context.restore()
-
     }
     update = function (game) {
-        console.log(this.action)
         this.tick++;
 
 
@@ -265,7 +283,7 @@ class Game {
         let k = new KeyboardListener(this);
         this.size = {w: 1600, h: 600}
         this.availableWords = this.generateInitialWords(this.size);
-        this.availableSpells = [new SoldierSpell()]
+        this.availableSpells = [new SoldierSpell(), new StrongerSpell(), new FasterSpell()]
         this.allied = [new Soldier(SIDE.ally)];
         this.mana = 0;
         this.health = {max: 100, current: undefined}
@@ -281,17 +299,18 @@ class Game {
         this.ticks = 0;
         let self = this;
         let tick = function () {
-
             self.ticks++;
             let ctx = document.getElementById("screen").getContext("2d");
-
             self.update();
             self.draw(ctx, self.size);
-
             requestAnimationFrame(tick);
         }
 
         tick();
+    }
+
+    setSpellCastedIsFaster(){
+        this.nextUnityIsFaster = true;
     }
 
     generateInitialWords(size) {
@@ -486,6 +505,11 @@ class Game {
         this.currentWord = "";
     }
     add = function (unity) {
+        if(this.nextUnityIsFaster){
+            unity.speed += 2
+            this.allied.push(unity)
+            this.nextUnityIsFaster = false;
+        }
         this.allied.push(unity)
     }
 }
