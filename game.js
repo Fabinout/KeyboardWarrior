@@ -145,6 +145,8 @@ let random_word = function () {
 }
 
 class SoldierSpell {
+    casted = false;
+    isBuff = false;
     constructor() {
         this.name = "soldier";
         this.cost = 30;
@@ -157,25 +159,41 @@ class SoldierSpell {
 }
 
 class StrongerSpell {
+    isBuff = true;
+
     constructor() {
+        this.casted = false;
         this.name = "stronger";
         this.cost = 40;
     }
 
     cast = function (game) {
         console.log("stronger spell is casted")
-        game.add(new Soldier());
+        this.casted = true;
+    }
+    buff = function (unity) {
+        unity.speed += 2
+        return unity;
     }
 }
+
 class FasterSpell {
+    isBuff = true;
+
     constructor() {
+        this.casted = false;
         this.name = "faster";
         this.cost = 20;
     }
 
     cast = function (game) {
         console.log("faster spell is casted")
-        game.setSpellCastedIsFaster();
+        this.casted = true;
+    }
+
+    buff = function (unity) {
+        unity.speed += 2
+        return unity;
     }
 }
 
@@ -193,7 +211,7 @@ const SIDE = {
 class Unity {
 
     constructor(maxHealth, side) {
-        this.health = {current:maxHealth, max: maxHealth}
+        this.health = {current: maxHealth, max: maxHealth}
         this.side = side;
     }
 }
@@ -205,7 +223,7 @@ class Soldier extends Unity {
         this.position = 0;
         this.size = 1;
         this.speed = 2;
-        this.health = {current:50, max:50}
+        this.health = {current: 50, max: 50}
         this.action = ACTIONS.moving;
         this.swordUp = true;
         this.tick = 0
@@ -253,14 +271,12 @@ class Soldier extends Unity {
     }
     update = function (game) {
         this.tick++;
-
-
         if (this.action === ACTIONS.moving) {
             let foundEnemy = game.findEnemy(this);
-            if(foundEnemy!== null){
+            if (foundEnemy !== null) {
                 this.target = foundEnemy;
                 this.action = ACTIONS.attacking;
-            }else{
+            } else {
                 this.position = Math.min(this.position + this.speed, 1330)
             }
         } else if (this.action === ACTIONS.attacking) {
@@ -289,8 +305,9 @@ class Game {
         this.health = {max: 100, current: undefined}
         this.health.current = this.health.max
         this.world = {x0: 100, xs: this.size.w - 100}
+
         function generateSimpleOpponent() {
-            return {health: {current: 100, max: 100}, mana:0};
+            return {health: {current: 100, max: 100}, mana: 0};
         }
 
         this.opponent = generateSimpleOpponent()
@@ -307,10 +324,6 @@ class Game {
         }
 
         tick();
-    }
-
-    setSpellCastedIsFaster(){
-        this.nextUnityIsFaster = true;
     }
 
     generateInitialWords(size) {
@@ -362,7 +375,7 @@ class Game {
             let cooldown = 100;
             if (self.ticks > word.time + cooldown) {
                 let value = random_word();
-                while(contains(value)){
+                while (contains(value)) {
                     value = random_word();
                 }
                 this.availableWords.push(new Word(value, word.x, word.y))
@@ -373,9 +386,10 @@ class Game {
         this.wordsToRecreate = savedForLater;
     }
 
-    findEnemy(unity){
+    findEnemy(unity) {
         return null;
     }
+
     draw = function (ctx, canvasSize) {
         ctx.clearRect(0, 0, canvasSize.w, canvasSize.h)
         //console.log(this.availableWords.length)
@@ -423,16 +437,22 @@ class Game {
             spells.forEach(w => {
                     let y = 0 - (500 * w.cost / 100)
                     let x = manaBarWidth + 10;
-                    if (cw.length > 0 && w.name.startsWith(cw)) {
-                        ctx.fillStyle = "red"
-                        let firstText = "- " + cw;
-                        ctx.fillText(firstText, x, y)
-                        let wordWidth = ctx.measureText(firstText).width
-                        ctx.fillStyle = "black"
-                        ctx.fillText(w.name.substring(cw.length), wordWidth + x, y);
-
-                    } else {
+                    if (w.casted) {
+                        ctx.fillStyle = "#D3D3D3"
                         ctx.fillText("- " + w.name, x, y)
+                        ctx.fillStyle = "black"
+                    } else {
+                        if (cw.length > 0 && w.name.startsWith(cw)) {
+                            ctx.fillStyle = "red"
+                            let firstText = "- " + cw;
+                            ctx.fillText(firstText, x, y)
+                            let wordWidth = ctx.measureText(firstText).width
+                            ctx.fillStyle = "black"
+                            ctx.fillText(w.name.substring(cw.length), wordWidth + x, y);
+
+                        } else {
+                            ctx.fillText("- " + w.name, x, y)
+                        }
                     }
                     ctx.stroke()
                 }
@@ -505,11 +525,14 @@ class Game {
         this.currentWord = "";
     }
     add = function (unity) {
-        if(this.nextUnityIsFaster){
-            unity.speed += 2
-            this.allied.push(unity)
-            this.nextUnityIsFaster = false;
+
+        let buffSpells = this.availableSpells.filter(s => s.isBuff && s.casted)
+        let buffedUnity = unity;
+        for (let spell of buffSpells) {
+            buffedUnity = spell.buff(buffedUnity);
+            spell.casted = false;
         }
+
         this.allied.push(unity)
     }
 }
