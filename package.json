@@ -2,7 +2,9 @@
   "name": "keyboardwarrior",
   "version": "0.0.1",
   "description": "",
-  "keywords": ["game"],
+  "keywords": [
+    "game"
+  ],
   "license": "",
   "author": "Fabien Lamarque",
   "scripts": {
