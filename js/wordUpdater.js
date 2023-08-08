@@ -10,9 +10,9 @@ export class WordUpdater {
         };
 
         if (contains(game.currentWord)) {
-            //*
+
             let word = aw.find(w => w === game.currentWord);
-            game.mana = Math.min(game.currentWord.length + game.mana, 100);
+            game.mana = Math.min(game.currentWord.length *4 + game.mana, 100);
             let position = game.availableWords.find(w => w.value === game.currentWord).position;
             game.wordsToRecreate.push({x: position.x, y: position.y, time: game.ticks});
 
