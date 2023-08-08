@@ -1,5 +1,4 @@
 export class KeyboardListener {
-
     constructor(game) {
         window.onkeydown = function (ev) {
             let key = ev.key;
