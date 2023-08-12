@@ -42,8 +42,6 @@ export class WordUpdater {
         }
         let self = this;
         let savedForLater = []
-        console.log(game.wordsToRecreate)
-        console.log(savedForLater)
         for (const word of game.wordsToRecreate) {
             let cooldown = 100;
             if (game.ticks > word.time + cooldown) {

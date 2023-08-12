@@ -127,24 +127,24 @@ class Game {
             ctx.fillStyle = "black"
             ctx.font = "15px Courier New";
             spells.forEach(w => {
-                    let y = 0 - (500 * w.cost / 100)
+                    ctx.fillStyle = "black"
+                    let y = 0 - (500 * w.cost / 100) + 6
                     let x = manaBarWidth + 10;
                     if (w.casted) {
-                        ctx.fillStyle = "#D3D3D3"
+                        ctx.fillStyle = "red";
+                        ctx.fillText("  " + w.name, x, y)
+                    } else if (w.cost > mana) {
+                        ctx.fillStyle = "gray";
                         ctx.fillText("- " + w.name, x, y)
-                        ctx.fillStyle = "black"
+                    } else if (cw.length > 0 && w.name.startsWith(cw)) {
+                        ctx.fillStyle = "red";
+                        let firstText = "- " + cw;
+                        ctx.fillText(firstText, x, y)
+                        let wordWidth = ctx.measureText(firstText).width
+                        ctx.fillStyle = "black";
+                        ctx.fillText(w.name.substring(cw.length), wordWidth + x, y);
                     } else {
-                        if (cw.length > 0 && w.name.startsWith(cw)) {
-                            ctx.fillStyle = "red"
-                            let firstText = "- " + cw;
-                            ctx.fillText(firstText, x, y)
-                            let wordWidth = ctx.measureText(firstText).width
-                            ctx.fillStyle = "black"
-                            ctx.fillText(w.name.substring(cw.length), wordWidth + x, y);
-
-                        } else {
-                            ctx.fillText("- " + w.name, x, y)
-                        }
+                        ctx.fillText("- " + w.name, x, y)
                     }
                     ctx.stroke()
                 }
